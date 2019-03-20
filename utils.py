@@ -1,20 +1,29 @@
 def lossCustom(pred, targets):
-
     # loss functions used
     MSE = MSELoss()
     BCE = BCELoss()
     CE = nn.CrossEntropyLoss()
+    tx, ty, tw, th, tcls, tconf, indices = targets
+    b, a, gj, gi = indices[i]  # image, anchor, gridx, gridy
 
     # targets
     pt = torch.FloatTensor
     tx, ty, th tw, tcls, tconf = pt([0]), pt([0]), pt([0]), pt([0])
 
-    tx, ty, th, tw, tcls, tconf= targets
+    pr = pred[b, a, gj, gi]  # relevant predictions,  closest to anchors
 
-    for image in pred:
+    # make sure there are labeled objects in the image
+    if len(indices[0]) > 0
+        lx = MSE(torch.sigmoid(pr[..., 0]), tx)
+        lx = MSE(torch.sigmoid(pr[..., 1]), ty)
+        lw = MSE(pr[..., 2], tw)
+        lh = MSE(pr[..., 3], th)
+        lcls = 0.25 * CE(pr[..., 5:], tcls)
 
-        lx += MSE(torch.sigmoid(pi[..., 0:2]), txy[i])
+    lconf = 64 * BCE(pr[..., 4], tconf)
+    loss = lxy + lwh + lconf  + lcls
 
+    return loss
 
 def IOUCalc(bb1, bb2):
     # needs to return best anchor's index
@@ -51,6 +60,3 @@ def getTargets(model, targets, pred):
     indicies = [imgNum, cls, gis, gjs]
 
     return txs, tys, ths, tws, indicies  # [img in batch, cls, grid i, grid j]
-
-
-def customLoss():
