@@ -1,3 +1,14 @@
+import glob
+import random
+from collections import defaultdict
+
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
 def lossCustom(pred, targets):
     # loss functions used
     MSE = MSELoss()
@@ -7,9 +18,10 @@ def lossCustom(pred, targets):
     b, a, gj, gi = indices[i]  # image, anchor, gridx, gridy
     # targets
     pt = torch.FloatTensor
-    tx, ty, th tw, tcls, tconf = pt([0]), pt([0]), pt([0]), pt([0])
+    tx, ty, th, tw, tcls, tconf = pt([0]), pt([0]), pt([0]), pt([0]), pt([0])
     pr = pred[b, a, gj, gi]  # relevant predictions,  closest to anchors
-    make sure there are labeled objects in the image
+
+    # make sure there are labeled objects in the image
     if(len(indices[0]) > 0 ):
         lx = MSE(torch.sigmoid(pr[..., 0]), tx)
         lx = MSE(torch.sigmoid(pr[..., 1]), ty)
@@ -21,7 +33,6 @@ def lossCustom(pred, targets):
     loss = lxy + lwh + lconf  + lcls
 
     return loss
-
 
 def IOUCalc(bb1, bb2):
     # needs to return best anchor's index
