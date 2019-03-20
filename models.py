@@ -1,6 +1,3 @@
-
-
-
 def create_modules(module_defs):
     """
     Constructs module list of layer blocks from module configuration in module_defs

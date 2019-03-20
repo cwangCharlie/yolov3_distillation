@@ -1,3 +1,9 @@
+
+# Things to control
+# 1. model cfg
+# 2. model weights loaded
+# 3. model weight layer cutoff
+
 import argparse
 import time
 
@@ -33,8 +39,8 @@ def train(
     start_epoch = 0
 
 
-    # Load all incoming weights
-    load_darknet_weights(model, weights)
+    # Load all incoming weights [model, weights, cutoff]
+    load_darknet_weights(model, weights, cutoff)
 
 
     # Transfer learning (train only YOLO layers)
@@ -66,7 +72,7 @@ def train(
 
             # txs, tys, ths, tws, indicies [img in batch, cls, grid i, grid j]
             targetsAltered = getTargets(model, targets, pred)
-            loss, loss_dict = compute_loss(pred, target_list) # loss = lxy + lwh + lconf + lcls
+            loss, loss_dict = lossCustom(pred, targets) # loss = lxy + lwh + lconf + lcls
 
             # Compute gradient
             loss.backward()
