@@ -10,6 +10,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import os
 
+from datasets import *
+
 
 # Set printoptions
 torch.set_printoptions(linewidth=1320, precision=5, profile='long')
@@ -57,10 +59,11 @@ def IOUCalc(w1, h1, box2):
 
 def getTargets(model, targets, pred):
     # targets [image in batch, cls, tx, ty, th, tw]
-    # finds best anchor box to use based in IOU of img bbox and prior anchor box dimension
 
-    layer = get_yolo_layers(model)
-    layer = layer[0]
+    # find yolo layer index
+    for layer, mod in enumerate(model.module_defs):
+        if(mod['type'] == 'yolo'):
+            break
 
     gridSize= model.module_list[layer][0].nG  # grid size
     anchors =  model.module_list[layer][0].anchor_vec # anchors from yolo layer in cfg
@@ -90,11 +93,10 @@ def getTargets(model, targets, pred):
 
 
     imgNum, cls = targets[:, 0:2].long().t()  # target image, target class
-    print(cls)
-    exit()
-    # indicies = [imgNum, cls, gis, gjs]
 
-    return txs, tys, ths, tws, imgNum, cls, gis, gjs  # [img in batch, cls, grid i, grid j]
+    # confidence prediction, zero unless object label present
+    tconf = torch.zeros_like(pred[..., 0])
+    tconf[imgNum, bestAnchors, gis, gjs] = 1 # populate all these with 1's
 
-def float3(x):  # format floats to 3 decimals
-    return float(format(x, '.3f'))
+
+    return txs, tys, ths, tws, imgNum, tconf, cls, gis, gjs  # [img in batch, cls, grid i, grid j]
