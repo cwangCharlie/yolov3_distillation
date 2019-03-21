@@ -72,8 +72,9 @@ def train(
 
             # txs, tys, ths, tws, indicies [img in batch, cls, grid i, grid j]
             targetsAltered = getTargets(model, targets, pred)
-            loss, loss_dict = lossCustom(pred, targets) # loss = lxy + lwh + lconf + lcls
+            loss = lossCustom(pred, targetsAltered) # loss = lxy + lwh + lconf + lcls
 
+            print(loss)
             # Compute gradient
             loss.backward()
 

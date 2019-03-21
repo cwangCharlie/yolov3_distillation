@@ -24,24 +24,25 @@ def lossCustom(pred, targets):
     MSE = nn.MSELoss()
     BCE = nn.BCELoss()
     CE = nn.CrossEntropyLoss()
-    tx, ty, tw, th, tcls, tconf, indices = targets
-    b, a, gj, gi = indices[i]  # image, anchor, gridx, gridy
-    # targets
     pt = torch.FloatTensor
-    tx, ty, th, tw, tcls, tconf = pt([0]), pt([0]), pt([0]), pt([0]), pt([0])
-    pr = pred[b, a, gj, gi]  # relevant predictions,  closest to anchors
+    loss, tx, ty, th, tw, tcls, tconf,  = pt([0]), pt([0]), pt([0]), pt([0]), pt([0]), pt([0]), pt([0])
+
+    txs, tys, ths, tws, imgNum, tconf, bestAnchors, tcls, gis, gjs =  targets
+
+
+    pr = pred[imgNum, bestAnchors, gis, gjs]  # relevant predictions,  closest to anchors
 
     # make sure there are labeled objects in the image
-    if(len(indices[0]) > 0 ):
-        lx = MSE(torch.sigmoid(pr[..., 0]), tx)
-        lx = MSE(torch.sigmoid(pr[..., 1]), ty)
-        lw = MSE(pr[..., 2], tw)
-        lh = MSE(pr[..., 3], th)
+    if(len(imgNum) > 0 ):
+        lx = MSE(torch.sigmoid(pr[..., 0]), txs)
+        ly = MSE(torch.sigmoid(pr[..., 1]), tys)
+        lw = MSE(pr[..., 2], tws)
+        lh = MSE(pr[..., 3], ths)
         lcls = 0.25 * CE(pr[..., 5:], tcls)
 
-    lconf = 64 * BCE(pr[..., 4], tconf)
-    loss = lxy + lwh + lconf  + lcls
-
+    # because it goes [img, anchors, gi, gj, 85], we are taking the 4th slice here
+    lconf = 64 * BCE(torch.sigmoid(pred[..., 4]), tconf)
+    loss = lx + ly + lw +lh + lconf + lcls
     return loss
 
 def IOUCalc(w1, h1, box2):
@@ -68,7 +69,6 @@ def getTargets(model, targets, pred):
     gridSize= model.module_list[layer][0].nG  # grid size
     anchors =  model.module_list[layer][0].anchor_vec # anchors from yolo layer in cfg
 
-    print("targets:", targets.size())
 
     # Find out which yolo layer prior anchor is best by calculating IOUs
     gws = targets[:, 4] * gridSize
@@ -99,4 +99,4 @@ def getTargets(model, targets, pred):
     tconf[imgNum, bestAnchors, gis, gjs] = 1 # populate all these with 1's
 
 
-    return txs, tys, ths, tws, imgNum, tconf, cls, gis, gjs  # [img in batch, cls, grid i, grid j]
+    return txs, tys, ths, tws, imgNum, tconf, bestAnchors, cls, gis, gjs  # [img in batch, cls, grid i, grid j]
